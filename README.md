@@ -1,8 +1,4 @@
----
-title: "README"
-author: "Rafael Silveira @silveiR4f"
-output: html_document
----
+# README
 
 To run this script it's necessary to install and run the following R Packages:
 
