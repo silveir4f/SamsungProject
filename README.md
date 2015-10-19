@@ -1,34 +1,84 @@
-# SamsungProject
-Getting and Cleaning Data
-
-title: "CODEBOOK"
+---
+title: "README"
 author: "Rafael Silveira @silveiR4f"
+output: html_document
+---
 
-### INTRO
+To run this script it's necessary to install and run the following R Packages:
 
-This document describe the process for the Getting and Cleaning Data Project.
+```{r, include=FALSE, cache=FALSE}
+library(tidyr)
+library(sqldf)
+library(psych)
+library(plyr)
+```
 
-The data about wearable computing was collected from the accelerometers from the Samsung Galaxy S smartphone.
+In order to load the files, the next step will set the working directory to the folder downloaded from the Project page. After that, loading the three data sets of the train group, the three data sets of the test group, the activity labels and the feature labels.
 
-### RAW DATA 
+```{r, eval=TRUE}
+setwd("C:/R/UCI HAR Dataset/")
+subject_train <- read.table("train/subject_train.txt")  
+X_train <- read.table("train/X_train.txt") 
+Y_train <- read.table("train/Y_train.txt")
+subject_test <- read.table("test/subject_test.txt")
+X_test <- read.table("test/X_test.txt")
+Y_test <- read.table("test/Y_test.txt")
+activity_labels <- read.table("activity_labels.txt")
+features <- read.table("features.txt")
+```
 
-Data was provided by Coursera. It was divided into Test and Train files (t*) :
+Before merging the two data sets, the following script will add a new variable to the **Y_test** and **Y_train** data sets with the label of the activity (found in activity_labels.txt).
 
- * Subject number (a vector between 1 and 30) **[subject_t*.txt]**
- * Activity Id (a vector between 1 and 6) **[Y_t*.txt]**
- * Feature measurents (a data matrix with a collection of signals and statistical measures) **[X_t*.txt]**.
+```{r, eval=TRUE, warning=FALSE}
+Y_train <- sqldf('SELECT Y_train.*, activity_labels.V2 FROM Y_train LEFT JOIN activity_labels ON Y_train.V1=activity_labels.V1;')
+Y_test <- sqldf('SELECT Y_test.*, activity_labels.V2 FROM Y_test LEFT JOIN activity_labels ON Y_test.V1=activity_labels.V1;')
+```
 
-### GOAL
+Merging the train data sets into a single data set **TRAIN**. Here I created a new variable TT to label this data set as train and be able to identify these observations after they are merged with the other half. 
 
+```{r, eval=TRUE}
+TRAIN <- data.frame(SUBJECT=subject_train[,1],ACTIVITY=Y_train[,2],TT="TRAIN") 
+TRAIN <- cbind(TRAIN,X_train)
+```
 
-The goal is to create a tidy data set (in wide or long format) with the average of each variable, for each activity and each subject. In order to achieve that: 
+Merging the three *test* data sets into a single data set **TEST**. Here I created a new variable TT to label this data set as test and be able to identify these observations after they are merged with the other half.
 
- * Merges the training and the test sets to create one data set.
- * Extracts only the measurements on the mean and standard deviation for each measurement. 
- * Uses descriptive activity names to name the activities in the data set
- * Appropriately labels the data set with descriptive variable names. 
+```{r, eval=TRUE}
+TEST <- data.frame(SUBJECT=subject_test[,1], ACTIVITY=Y_test[,2], TT="TEST")
+TEST <- cbind(TEST, X_test)
+```
 
+Merging the **TRAIN** and **TEST** data sets into a new data set **TT** and reshaping the data set into long format in a new dataset **TTLONG**.
 
-### CODEBOOK
+```{r, eval=TRUE}
+TT <- rbind(TRAIN,TEST)
+TTLONG <- gather(TT, VARIABLE, MEASUREMENT, V1:V561)
+```
 
-Included a new variable in Y_test.txt and Y_train.txt with the label of the activities in activity_labels.txt. Merged the train data sets: first the SUBJECT (subject_train.txt), ACTIVITY (Y_train.txt), a new variable TT to indicate this data as "TRAIN" and finally the X_train.txt. Merged the test data sets: first the SUBJECT (subject_test.txt), ACTIVITY (Y_test.txt), a new variable TT to indicate this data as "TEST" and finally the X_test.txt. Merged the test and train datasets into one. Reshaped the data set into long format. Added the labels of the features in the long data set with the referenced label in the features.txt file. Subset the data set to contain only "mean()" and "std()" measurements. Agregate the long data set to calculate the mean for each Subject, Activity and Feature Measurement (tidy data for submission).
+Complementing the **VARIABLE** variable with the feature labels found in **features.txt**. For that it's necessary to remove the default V in the variable name in order to perform a *LEFT JOIN* with the sqldf() function.
+
+```{r, eval=TRUE}
+TTLONG$VARIABLE <- gsub("V", "", TTLONG$VARIABLE) # removing the "V"
+TTLONG <- sqldf('SELECT TTLONG.*, features.V2 FROM TTLONG LEFT JOIN features ON TTLONG.VARIABLE=features.V1;') 
+TTLONG$VARIABLE <- TTLONG[,6]  
+TTLONG <- TTLONG[,-6] 
+```
+Now, with the labels of the features and measurements it's possible to subset only the mean and standard deviation measures.
+ 
+ * mean()
+ * std()
+
+```{r, eval=TRUE}
+TTLONG_MS <- sqldf("SELECT TTLONG.* FROM TTLONG WHERE (TTLONG.VARIABLE LIKE '%mean()%') OR (TTLONG.VARIABLE LIKE '%std()%') ")
+TTLONG_MS$VARIABLE <- factor(TTLONG_MS$VARIABLE)  # removing empty levels
+```
+
+Now, the final step, creating a tidy data set with DDPLY. This function calculates the mean for each subject, activity and feature measurement.
+
+```{r, eval=TRUE}
+TIDY_DATA <- ddply(TTLONG_MS,.(SUBJECT,ACTIVITY,VARIABLE),summarise,MEAN=round(mean(MEASUREMENT),2))
+head(TIDY_DATA)
+dim(TIDY_DATA)
+```
+
+Voilà!
