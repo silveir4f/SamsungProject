@@ -5,7 +5,6 @@ To run this script it's necessary to install and run the following R Packages:
 ```{r, include=FALSE, cache=FALSE}
 library(tidyr)
 library(sqldf)
-library(psych)
 library(plyr)
 ```
 
