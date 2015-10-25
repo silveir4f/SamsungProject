@@ -32,3 +32,25 @@ The goal is to create a tidy data set (in wide or long format) with the average 
 ### CODEBOOK
 
 Included a new variable in Y_test.txt and Y_train.txt with the label of the activities in activity_labels.txt. Merged the train data sets: first the SUBJECT (subject_train.txt), ACTIVITY (Y_train.txt), a new variable TT to indicate this data as "TRAIN" and finally the X_train.txt. Merged the test data sets: first the SUBJECT (subject_test.txt), ACTIVITY (Y_test.txt), a new variable TT to indicate this data as "TEST" and finally the X_test.txt. Merged the test and train datasets into one. Reshaped the data set into long format. Added the labels of the features in the long data set with the referenced label in the features.txt file. Subset the data set to contain only "mean()" and "std()" measurements. Agregate the long data set to calculate the mean for each Subject, Activity and Feature Measurement (tidy data for submission).
+
+
+## THE TIDY DATA SET
+
+### SUBJECT
+Representing each of the 30 subjects in the experiment
+
+
+### ACTIVITY
+Representing if the observation was:
+- WALKING
+- WALKING_UPSTAIRS
+- WALKING_DOWNSTAIRS
+- SITTING
+- STANDING
+- LAYING
+
+### VARIABLE
+Name of the variable measured in the experiment. Only variables with mean() and std().
+
+### MEAN
+Agregate mean value of that match group (SUBJECT, ACTIVITY, VARIABLE).
