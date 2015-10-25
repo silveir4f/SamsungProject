@@ -92,7 +92,7 @@ TTLONG_MS$VARIABLE <- factor(TTLONG_MS$VARIABLE)  # removing empty levels
 
 
 ################################################
-#### TIDY DATA WITH DDPLY[PLYR]
+#### TIDY DATA WITH DDPLY [PLYR]
 ################################################
 TIDY_DATA <- ddply(TTLONG_MS,.(SUBJECT,ACTIVITY,VARIABLE),summarise,MEAN=round(mean(MEASUREMENT),2))
 write.table(TIDY_DATA, "TIDYDATA.txt", row.name=FALSE, sep="\t", dec=".") 
